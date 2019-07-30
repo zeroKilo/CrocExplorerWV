@@ -65,7 +65,7 @@ namespace CrocExplorerWV
                     {
                         case 5:
                             m.Seek((x + y * header.Width) * image.BytesPerPixel, 0);
-                            ushort value = Helper.ReadU16(m);
+                            ushort value = Helper.ReadU16LE(m);
                             byte b = (byte)(value & 0x1F);
                             value >>= 5;
                             byte g = (byte)(value & 0x3F);
@@ -83,7 +83,7 @@ namespace CrocExplorerWV
 
         private void ReadChunk(Stream s)
         {
-            uint id = Helper.ReadU32(s);
+            uint id = Helper.ReadU32LE(s);
             switch (id)
             {
                 case 0x3D:
@@ -114,14 +114,14 @@ namespace CrocExplorerWV
             public PIXHeader(Stream s)
             {
                 _fileOffset = (uint)s.Position;
-                Length = Helper.ReadU32(s);
+                Length = Helper.ReadU32LE(s);
                 PixelFormat = (byte)s.ReadByte();
-                PageWidth = Helper.ReadU16(s);
-                Width = Helper.ReadU16(s);
-                Height = Helper.ReadU16(s);
-                OffsetX = Helper.ReadU16(s);
-                OffsetY = Helper.ReadU16(s);
-                Unknown = Helper.ReadU16(s);
+                PageWidth = Helper.ReadU16LE(s);
+                Width = Helper.ReadU16LE(s);
+                Height = Helper.ReadU16LE(s);
+                OffsetX = Helper.ReadU16LE(s);
+                OffsetY = Helper.ReadU16LE(s);
+                Unknown = Helper.ReadU16LE(s);
                 byte b;
                 name = "";
                 while ((b = (byte)s.ReadByte()) != 0)
@@ -140,9 +140,9 @@ namespace CrocExplorerWV
             public PIXData(Stream s)
             {
                 _fileOffset = (uint)s.Position;
-                Length = Helper.ReadU32(s);
-                PixelCount = Helper.ReadU32(s);
-                BytesPerPixel = Helper.ReadU32(s);
+                Length = Helper.ReadU32LE(s);
+                PixelCount = Helper.ReadU32LE(s);
+                BytesPerPixel = Helper.ReadU32LE(s);
                 ImageData = new byte[Length];
                 s.Read(ImageData, 0, (int)Length);
             }

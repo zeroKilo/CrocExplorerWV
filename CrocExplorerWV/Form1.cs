@@ -15,7 +15,8 @@ namespace CrocExplorerWV
     public partial class Form1 : Form
     {
         PIXFile currentPix;
-
+        MODFile currentMod;
+        Engine3D engine;
         public Form1()
         {
             InitializeComponent();
@@ -34,6 +35,8 @@ namespace CrocExplorerWV
                 this.TopMost = false;
                 RefreshTree();
                 RefreshList();
+                engine = new Engine3D(pb2);
+                timer1.Enabled = true;
             }
             else
                 this.Close();
@@ -73,6 +76,21 @@ namespace CrocExplorerWV
             foreach (string s in fileList)
                 if (s.ToLower().Contains(filter))
                     listBox1.Items.Add(s);
+
+
+            files = Directory.GetFiles(FileSystem.basePath, "*.mod", SearchOption.AllDirectories);
+            fileList = new List<string>();
+            foreach (string file in files)
+                fileList.Add(file);
+            foreach (IdxFile idx in FileSystem.idxFiles)
+                foreach (FileReference r in idx.refs)
+                    if (r.name.ToLower().EndsWith(".mod"))
+                        fileList.Add(idx.basepath + idx.filename + ">" + r.name);
+            listBox2.Items.Clear();
+            filter = textBox2.Text.ToLower();
+            foreach (string s in fileList)
+                if (s.ToLower().Contains(filter))
+                    listBox2.Items.Add(s);
         }
 
         private void tv1_AfterSelect(object sender, TreeViewEventArgs e)
@@ -150,7 +168,7 @@ namespace CrocExplorerWV
             try
             {
                 string s = listBox1.SelectedItem.ToString();
-                currentPix = new PIXFile(LoadPixFile(s));
+                currentPix = new PIXFile(LoadFile(s));
                 comboBox1.Items.Clear();
                 int count = 1;
                 foreach (PIXFile.PIXHeader h in currentPix.headers)
@@ -161,7 +179,7 @@ namespace CrocExplorerWV
             catch { }
         }
 
-        private byte[] LoadPixFile(string s)
+        private byte[] LoadFile(string s)
         {
             byte[] result = null;
             if (s.Contains(">"))
@@ -216,7 +234,7 @@ namespace CrocExplorerWV
             if (listBox1.SelectedIndex != -1 && comboBox1.SelectedIndex != -1)
             {
                 string s = listBox1.SelectedItem.ToString();
-                byte[] pxData = LoadPixFile(s);
+                byte[] pxData = LoadFile(s);
                 PIXFile px = new PIXFile(pxData);
                 if (px == null)
                     return;
@@ -291,7 +309,7 @@ namespace CrocExplorerWV
                         Application.DoEvents();                        
                     }
                     if (entry.Contains(">"))
-                        ExportPNGfromPIX(LoadPixFile(entry), Path.GetFileName(entry.Split('>')[1]), output + Path.GetFileName(entry.Split('>')[0]) + "\\");
+                        ExportPNGfromPIX(LoadFile(entry), Path.GetFileName(entry.Split('>')[1]), output + Path.GetFileName(entry.Split('>')[0]) + "\\");
                     else
                         ExportPNGfromPIX(File.ReadAllBytes(entry), Path.GetFileName(entry), output);
                     count++;
@@ -364,6 +382,118 @@ namespace CrocExplorerWV
                     .Replace("'", "_QUOTE_")
                     .Replace("\"", "_DBLQUOTE_")
                     .Replace("*", "_STAR_");
+        }
+
+        private void listBox2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                string s = listBox2.SelectedItem.ToString();
+                MODFile m = new MODFile(LoadFile(s));
+                engine.ClearScene();
+                foreach (MODFile.MODObject ob in m.obj)
+                {
+                    RenderObject o = new RenderObject(engine.device, RenderObject.RenderType.TriListWired, engine.defaultTexture, engine);
+                    List<RenderObject.VertexWired> tmp = new List<RenderObject.VertexWired>();
+                    foreach (MODFile.MODFace f in ob.faces)
+                    {
+                        tmp.Add(MakeV(ob.vertices[f.f1 - 1]));
+                        tmp.Add(MakeV(ob.vertices[f.f2 - 1]));
+                        tmp.Add(MakeV(ob.vertices[f.f3 - 1]));
+                        if ((f.flags & 0x8) != 0)
+                        {
+                            tmp.Add(MakeV(ob.vertices[f.f2 - 1]));
+                            tmp.Add(MakeV(ob.vertices[f.f3 - 1]));
+                            tmp.Add(MakeV(ob.vertices[f.f4 - 1]));
+                        }
+                    }
+                    o.verticesWired = tmp.ToArray();
+                    o.InitGeometry();
+                    engine.objects.Add(o);
+                }
+                engine.ResetCameraDistance();
+
+            }
+            catch { }
+        }
+
+        private RenderObject.VertexWired MakeV(MODFile.MODVector3 mv)
+        {
+            RenderObject.VertexWired v = new RenderObject.VertexWired();
+            v.Position.X = mv.X;
+            v.Position.Y = mv.Y;
+            v.Position.Z = mv.Z;
+            v.Position.W = 1;
+            v.Color.Alpha = 255;
+            return v;
+        }
+
+        private void textBox2_TextChanged(object sender, EventArgs e)
+        {
+            RefreshList();
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            if (engine != null)
+                engine.Render();
+        }
+
+        bool mouseUp = true;
+        Point mouseLast = new Point(0, 0);
+
+        private void pb2_MouseDown(object sender, MouseEventArgs e)
+        {
+            mouseUp = false;
+            mouseLast = e.Location;
+        }
+
+        private void pb2_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!mouseUp)
+            {
+                int dx = e.X - mouseLast.X;
+                int dy = e.Y - mouseLast.Y;
+                engine.CamDis *= 1 + (dy * 0.01f);
+                engine.CamRot += dx * 0.01f;
+                mouseLast = e.Location;
+            }
+
+        }
+
+        private void pb2_MouseUp(object sender, MouseEventArgs e)
+        {
+            mouseUp = true;
+        }
+
+        private void pb2_SizeChanged(object sender, EventArgs e)
+        {
+            if (engine != null)
+                engine.Resize(pb2);
+        }
+
+        private void exportAsOBJToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            int n = listBox2.SelectedIndex;
+            if (n == -1)
+                return;
+            try
+            {
+                string s = listBox2.SelectedItem.ToString();
+                MODFile m = new MODFile(LoadFile(s));
+                SaveFileDialog d = new SaveFileDialog();
+                d.Filter = "*.obj|*.obj";
+                if (s.Contains(">"))
+                    d.FileName = Path.GetFileNameWithoutExtension(s.Split('>')[1]) + ".obj";
+                else
+                    d.FileName = Path.GetFileNameWithoutExtension(s) + ".obj";
+                if(d.ShowDialog() == DialogResult.OK)
+                {
+                    m.SaveToObj(d.FileName);
+                    Log.WriteLine("Saved to " + d.FileName);
+                }
+            }
+            catch { }
         }
     }
 }

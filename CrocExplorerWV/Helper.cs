@@ -5,12 +5,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Drawing;
 
 namespace CrocExplorerWV
 {
     public static class Helper
     {
-        public static uint ReadU32(Stream s)
+        public static uint ReadU32LE(Stream s)
         {
             ulong result = 0;
             result = (byte)s.ReadByte();
@@ -20,14 +21,31 @@ namespace CrocExplorerWV
             return (uint)result;
         }
 
-        public static ushort ReadU16(Stream s)
+        public static ushort ReadU16LE(Stream s)
         {
             ulong result = 0;
             result = (byte)s.ReadByte();
             result = (result << 8) | (byte)s.ReadByte();
             return (ushort)result;
         }
-        
+        public static uint ReadU32BE(Stream s)
+        {
+            ulong result = 0;
+            result = (byte)s.ReadByte();
+            result |= (ulong)((byte)s.ReadByte() << 8);
+            result |= (ulong)((byte)s.ReadByte() << 16);
+            result |= (ulong)((byte)s.ReadByte() << 24);
+            return (uint)result;
+        }
+
+        public static ushort ReadU16BE(Stream s)
+        {
+            ulong result = 0;
+            result = (byte)s.ReadByte();
+            result |= (ulong)((byte)s.ReadByte() << 8);
+            return (ushort)result;
+        }
+
         public static byte[] CompressRLE(byte[] buff, byte type)
         {
             MemoryStream result = new MemoryStream();
@@ -200,6 +218,14 @@ namespace CrocExplorerWV
                         break;
                     }
                 }
+            }
+        }
+
+        public static Bitmap LoadBitmapUnlocked(string file_name)
+        {
+            using (Bitmap bm = new Bitmap(file_name))
+            {
+                return new Bitmap(bm);
             }
         }
     }

@@ -19,7 +19,7 @@ namespace CrocExplorerWV.Properties {
     // -Klasse über ein Tool wie ResGen oder Visual Studio automatisch generiert.
     // Um einen Member hinzuzufügen oder zu entfernen, bearbeiten Sie die .ResX-Datei und führen dann ResGen
     // mit der /str-Option erneut aus, oder Sie erstellen Ihr VS-Projekt neu.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -57,6 +57,108 @@ namespace CrocExplorerWV.Properties {
             }
             set {
                 resourceCulture = value;
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die SamplerState Sampler : register(s0);
+        ///Texture2D ShaderTexture : register(t0);
+        ///struct VertexShaderOutput
+        ///{
+        ///    float4 Position : SV_Position;
+        ///    float4 Color : COLOR;
+        ///    float2 TextureUV : TEXCOORD0;
+        ///};
+        ///float4 main(VertexShaderOutput input) : SV_Target
+        ///{
+        ///    return ShaderTexture.Sample(Sampler, input.TextureUV);
+        ///} ähnelt.
+        /// </summary>
+        internal static string pixelShaderTextured {
+            get {
+                return ResourceManager.GetString("pixelShaderTextured", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die struct VertexShaderInput
+        ///{
+        ///    float4 Position : SV_POSITION;
+        ///    float4 Color : COLOR;
+        ///};
+        ///
+        ///float4 main(VertexShaderInput input) : SV_TARGET 
+        ///{ 
+        ///    return input.Color; 
+        ///} ähnelt.
+        /// </summary>
+        internal static string pixelShaderWired {
+            get {
+                return ResourceManager.GetString("pixelShaderWired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die cbuffer PerObject: register(b0)
+        ///{
+        ///    float4x4 WorldViewProj;
+        ///};
+        ///
+        ///struct VertexShaderInput
+        ///{
+        ///    float4 Position : SV_Position;
+        ///    float4 Color : COLOR;
+        ///    float2 TextureUV : TEXCOORD0;
+        ///};
+        ///
+        ///struct VertexShaderOutput
+        ///{
+        ///    float4 Position : SV_Position;
+        ///    float4 Color : COLOR;
+        ///    float2 TextureUV : TEXCOORD0;
+        ///};
+        ///
+        ///VertexShaderOutput main(VertexShaderInput input)
+        ///{
+        ///    VertexShaderOutput output = (VertexShaderOutput)0;
+        ///    output.Position = mul(input.Position, WorldViewProj);
+        ///    output.TextureUV = input. [Rest der Zeichenfolge wurde abgeschnitten]&quot;; ähnelt.
+        /// </summary>
+        internal static string vertexShaderTextured {
+            get {
+                return ResourceManager.GetString("vertexShaderTextured", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die cbuffer PerObject: register(b0)
+        ///{
+        ///    float4x4 WorldViewProj;
+        ///};
+        ///
+        ///struct VertexShaderInput
+        ///{
+        ///    float4 Position : SV_Position;
+        ///    float4 Color : COLOR;
+        ///};
+        ///
+        ///struct VertexShaderOutput
+        ///{
+        ///    float4 Position : SV_Position;
+        ///    float4 Color : COLOR;
+        ///};
+        ///
+        ///VertexShaderOutput main(VertexShaderInput input)
+        ///{
+        ///    VertexShaderOutput output = (VertexShaderOutput)0;
+        ///    output.Position = mul(input.Position, WorldViewProj);
+        ///    output.Color = input.Color;
+        ///    return output;
+        ///} ähnelt.
+        /// </summary>
+        internal static string vertexShaderWired {
+            get {
+                return ResourceManager.GetString("vertexShaderWired", resourceCulture);
             }
         }
     }
