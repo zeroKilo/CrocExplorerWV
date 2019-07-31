@@ -9,3 +9,5 @@ Features:
 - on the fly RLE compression
 - preview/import/export for pix files as png
 - export of all pix files
+- preview/export of model meshes
+- preview/export/import of wav sounds
