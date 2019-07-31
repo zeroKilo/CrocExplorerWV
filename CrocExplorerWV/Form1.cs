@@ -6,7 +6,6 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
-using System.Media;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Be.Windows.Forms;
@@ -18,7 +17,6 @@ namespace CrocExplorerWV
         PIXFile currentPix;
         MODFile currentMod;
         Engine3D engine;
-        SoundPlayer sp;
         public Form1()
         {
             InitializeComponent();
@@ -93,18 +91,6 @@ namespace CrocExplorerWV
             foreach (string s in fileList)
                 if (s.ToLower().Contains(filter))
                     listBox2.Items.Add(s);
-
-
-            fileList = new List<string>();
-            foreach (IdxFile idx in FileSystem.idxFiles)
-                foreach (FileReference r in idx.refs)
-                    if (r.name.ToLower().EndsWith(".wav"))
-                        fileList.Add(idx.basepath + idx.filename + ">" + r.name);
-            listBox3.Items.Clear();
-            filter = textBox3.Text.ToLower();
-            foreach (string s in fileList)
-                if (s.ToLower().Contains(filter))
-                    listBox3.Items.Add(s);
         }
 
         private void tv1_AfterSelect(object sender, TreeViewEventArgs e)
@@ -112,7 +98,7 @@ namespace CrocExplorerWV
             TreeNode sel = e.Node;
             IdxFile idx = null;
             FileReference fr = null;
-            GetFileReference(sel, out idx, out fr);
+            Helper.GetFileRefrence(sel, out idx, out fr);
             if (fr != null)
             {
                 byte[] data = idx.LoadEntry(fr);
@@ -140,7 +126,7 @@ namespace CrocExplorerWV
         {
             IdxFile idx = null;
             FileReference fr = null;
-            GetFileReference(tv1.SelectedNode, out idx, out fr);
+            Helper.GetFileRefrence(tv1.SelectedNode, out idx, out fr);
             if (fr != null)
             {
                 OpenFileDialog d = new OpenFileDialog();
@@ -154,37 +140,6 @@ namespace CrocExplorerWV
                     if (fr.compression != 0)
                         buff = Helper.CompressRLE(buff, fr.compression);
                     idx.SaveEntry(fr, buff, ucsize);
-                }
-            }
-        }
-
-        public void GetFileReference(TreeNode sel, out IdxFile idxFile, out FileReference fileRef)
-        {
-            idxFile = null;
-            fileRef = null;
-            bool found = false;
-            if (sel != null && sel.Parent != null && sel.Parent.Text.EndsWith(".idx"))
-            {
-                string idxpath = "";
-                if (sel.Parent.Parent == null)
-                    idxpath = sel.Parent.Text;
-                else
-                    idxpath = sel.Parent.Parent.Text.Substring(1) + "\\" + sel.Parent.Text;
-                foreach (IdxFile idx in FileSystem.idxFiles)
-                {
-                    if (idx.filename == idxpath)
-                        foreach (FileReference r in idx.refs)
-                            if (r.name == sel.Text)
-                            {
-                                found = true;
-                                fileRef = r;
-                                break;
-                            }
-                    if (found)
-                    {
-                        idxFile = idx;
-                        break;
-                    }
                 }
             }
         }
@@ -229,10 +184,24 @@ namespace CrocExplorerWV
             byte[] result = null;
             if (s.Contains(">"))
             {
-                IdxFile idf;
-                FileReference r;
-                FileSystem.FindFile(s, out idf, out r);
-                if (idf == null || r == null)
+                string[] parts = s.Split('>');
+                IdxFile idf = null;
+                foreach (IdxFile idx in FileSystem.idxFiles)
+                    if (idx.basepath + idx.filename == parts[0])
+                    {
+                        idf = idx;
+                        break;
+                    }
+                if (idf == null)
+                    return result;
+                FileReference r = null;
+                foreach (FileReference fr in idf.refs)
+                    if (fr.name == parts[1])
+                    {
+                        r = fr;
+                        break;
+                    }
+                if (r == null)
                     return result;
                 result = idf.LoadEntry(r);
             }
@@ -286,12 +255,31 @@ namespace CrocExplorerWV
                         pxData[start + i] = data[i];
                     if (s.Contains(">"))
                     {
-
-                        IdxFile idf;
-                        FileReference r;
-                        FileSystem.FindFile(s, out idf, out r);
-                        if (idf == null || r == null)
+                        string[] parts = s.Split('>');
+                        IdxFile idf = null;
+                        foreach (IdxFile idx in FileSystem.idxFiles)
+                            if (idx.basepath + idx.filename == parts[0])
+                            {
+                                idf = idx;
+                                break;
+                            }
+                        if (idf == null)
+                        {
+                            Log.WriteLine("Error: IDX File not found (" + parts[0] + ")");
                             return;
+                        }
+                        FileReference r = null;
+                        foreach (FileReference fr in idf.refs)
+                            if (fr.name == parts[1])
+                            {
+                                r = fr;
+                                break;
+                            }
+                        if (r == null)
+                        {
+                            Log.WriteLine("Error: File reference not found (" + parts[1] + ")");
+                            return;
+                        }
                         uint ucsize = (uint)pxData.Length;
                         if (r.compression != 0)
                             pxData = Helper.CompressRLE(pxData, r.compression);
@@ -329,6 +317,11 @@ namespace CrocExplorerWV
                 prog.Value = 0;
                 Log.WriteLine("Done.");
             }
+        }
+
+        private void ExportPNGFromWAD(string entry, string output)
+        {
+            string[] parts = entry.Split('>');
         }
 
         private void ExportPNGfromPIX(byte[] data, string pixname, string output)
@@ -501,66 +494,6 @@ namespace CrocExplorerWV
                 }
             }
             catch { }
-        }
-
-        private void textBox3_TextChanged(object sender, EventArgs e)
-        {
-            RefreshList();
-        }
-
-        private void listBox3_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            int n = listBox3.SelectedIndex;
-            if (n == -1)
-                return;
-            MemoryStream m = new MemoryStream(LoadFile(listBox3.SelectedItem.ToString()));
-            sp = new SoundPlayer(m);
-        }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            if (sp != null)
-                sp.Play();
-        }
-
-        private void exportAsWAVToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            int n = listBox3.SelectedIndex;
-            if (n == -1)
-                return;
-            string s = listBox3.SelectedItem.ToString();
-            SaveFileDialog d = new SaveFileDialog();
-            d.Filter = "*.wav|*.wav";
-            d.FileName = Path.GetFileNameWithoutExtension(s.Split('>')[1]);
-            if (d.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                File.WriteAllBytes(d.FileName, LoadFile(s));
-                Log.WriteLine("Saved to " + d.FileName);
-            }
-        }
-
-        private void importWAVToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            int n = listBox3.SelectedIndex;
-            if (n == -1)
-                return;
-            string s = listBox3.SelectedItem.ToString();
-            OpenFileDialog d = new OpenFileDialog();
-            d.Filter = "*.wav|*.wav";
-            if (d.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                byte[] data = File.ReadAllBytes(d.FileName);
-                IdxFile idf;
-                FileReference r;
-                FileSystem.FindFile(s, out idf, out r);
-                if (idf == null || r == null)
-                    return;
-                uint ucsize = (uint)data.Length;
-                if (r.compression != 0)
-                    data = Helper.CompressRLE(data, r.compression);
-                idf.SaveEntry(r, data, ucsize);
-                Log.WriteLine("Saved to " + s);
-            }
         }
     }
 }

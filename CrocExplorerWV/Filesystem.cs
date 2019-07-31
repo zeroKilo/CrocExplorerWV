@@ -42,34 +42,5 @@ namespace CrocExplorerWV
             }
             return result.ToArray();
         }
-
-        public static void FindFile(string s, out IdxFile idf, out FileReference r)
-        {
-            r = null;
-            idf = null;
-            string[] parts = s.Split('>');
-            foreach (IdxFile idx in FileSystem.idxFiles)
-                if (idx.basepath + idx.filename == parts[0])
-                {
-                    idf = idx;
-                    break;
-                }
-            if (idf == null)
-            {
-                Log.WriteLine("Error: IDX File not found (" + parts[0] + ")");
-                return;
-            }
-            foreach (FileReference fr in idf.refs)
-                if (fr.name == parts[1])
-                {
-                    r = fr;
-                    break;
-                }
-            if (r == null)
-            {
-                Log.WriteLine("Error: File reference not found (" + parts[1] + ")");
-                return;
-            }
-        }
     }
 }

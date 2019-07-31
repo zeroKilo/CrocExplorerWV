@@ -190,6 +190,37 @@ namespace CrocExplorerWV
             return result.ToArray();
         }
 
+        public static void GetFileRefrence(TreeNode sel, out IdxFile idxFile, out FileReference fileRef)
+        {
+            idxFile = null;
+            fileRef = null;
+            bool found = false;
+            if (sel != null && sel.Parent != null && sel.Parent.Text.EndsWith(".idx"))
+            {
+                string idxpath = "";
+                if (sel.Parent.Parent == null)
+                    idxpath = sel.Parent.Text;
+                else
+                    idxpath = sel.Parent.Parent.Text.Substring(1) + "\\" + sel.Parent.Text;
+                foreach (IdxFile idx in FileSystem.idxFiles)
+                {
+                    if (idx.filename == idxpath)
+                        foreach (FileReference r in idx.refs)
+                            if (r.name == sel.Text)
+                            {
+                                found = true;
+                                fileRef = r;
+                                break;
+                            }
+                    if (found)
+                    {
+                        idxFile = idx;
+                        break;
+                    }
+                }
+            }
+        }
+
         public static Bitmap LoadBitmapUnlocked(string file_name)
         {
             using (Bitmap bm = new Bitmap(file_name))

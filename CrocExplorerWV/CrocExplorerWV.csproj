@@ -88,7 +88,7 @@
   <ItemGroup>
     <Compile Include="Engine\Engine3D.cs" />
     <Compile Include="FileReference.cs" />
-    <Compile Include="FileSystem.cs" />
+    <Compile Include="Filesystem.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
